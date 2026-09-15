@@ -20,6 +20,12 @@ footer 跟随当前模型：用 Ark 的模型时显示 Ark 的**全部账号**�
 
 ## 安装
 
+从 npm 安装（推荐，已收录进 [pi.dev/packages](https://pi.dev/packages) 包目录）：
+
+```bash
+pi install npm:pi-multi-quota
+```
+
 从 GitHub 安装：
 
 ```bash
@@ -41,6 +47,7 @@ pi install .
 卸载时用**与安装时相同的 source 标识**：
 
 ```bash
+pi remove npm:pi-multi-quota                        # 从 npm 安装的
 pi remove https://github.com/wyouwd1/pi-multi-quota   # 从 GitHub 安装的
 pi remove .                                          # 从克隆目录安装的（在仓库根目录执行）
 ```

@@ -1,6 +1,6 @@
 # SPEC: pi-multi-quota
 
-> 状态：已实现；通过 GitHub 公开仓库分发（**不发布 npm**）
+> 状态：已实现；通过 GitHub 公开仓库与 npm 分发
 > 产出日期：2026-09-15
 > 本文档为设计存档，现状以 README 为准。
 > 前置：本 spec 由访谈（8 轮问答）收敛而来，所有决策均已逐条确认。
@@ -33,7 +33,7 @@
 
 ### 分发形态
 
-自用为主。通过 GitHub 公开仓库分发（`pi install https://github.com/wyouwd1/pi-multi-quota`），**不发布 npm**。
+自用为主。通过 GitHub 公开仓库（`pi install https://github.com/wyouwd1/pi-multi-quota`）与 npm（`pi install npm:pi-multi-quota`，收录进 pi.dev/packages 包目录）分发。
 
 ---
 

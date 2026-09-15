@@ -9,6 +9,7 @@
     "type": "git",
     "url": "git+https://github.com/wyouwd1/pi-multi-quota.git"
   },
+  "files": ["src", "README.md", "LICENSE"],
   "homepage": "https://github.com/wyouwd1/pi-multi-quota#readme",
   "bugs": { "url": "https://github.com/wyouwd1/pi-multi-quota/issues" },
   "keywords": ["pi-package", "pi-extension", "quota", "usage"],
