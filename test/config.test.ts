@@ -181,6 +181,7 @@ test("redact：digest / csrfToken / sk- / ark- / Bearer 一律替换", () => {
 });
 
 test("redact：整段账号 cookie 文本被抹掉", () => {
+  // AccountID 为合成占位值（非真实火山账号 ID），仅用于验证 redact 会整段抹除
   const cookie =
     "digest=AbCd1234+/9876xyzSECRETVALUE==; csrfToken=0123456789abcdef0123456789abcdef; " +
     "AccountID=1000000001; volc_locale=zh-CN; JSESSIONID=ABC123DEF456";
@@ -199,7 +200,7 @@ test("redact：不误伤普通文本", () => {
     "重置时间 2027-01-18T11:45:30.000Z",
     "HTTP 200 NotLogin：未登录",
     "provider=volcengine，账号 ark-a 已配置",
-    "配置文件 /root/.pi/agent/multi-quota.json 不存在",
+    "配置文件 ~/.pi/agent/multi-quota.json 不存在",
     "已过期 20 分钟",
   ].join("\n");
   assert.equal(redact(plain), plain);

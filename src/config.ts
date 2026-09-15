@@ -1,7 +1,7 @@
 /**
  * 配置存储：读写 ~/.pi/agent/multi-quota.json，含权限加固、损坏保护与脱敏工具。
  *
- * 约束（tasks/TEAM-SYNC.md §1.2 / §4）：
+ * 约束（SPEC.md §6 安全边界 · §12 Boundaries）：
  * - 文件损坏时只报错，**绝不覆盖**用户文件；
  * - 写入走「临时文件 + rename」原子替换，权限固定 600；
  * - redact() 供一切日志/错误信息使用，禁止 cookie / key 原文外泄。

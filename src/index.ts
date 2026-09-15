@@ -5,7 +5,7 @@
  * - 订阅 session_start / model_select / session_shutdown，维护 footer 状态
  * - 注册 /quota 命令族（详情 · 全量 · 配置 cookie · 列出账号）
  *
- * 硬性约束（tasks/TEAM-SYNC.md §4）：
+ * 硬性约束（SPEC.md §4.1 刷新时机 · §12 Never）：
  * - 定时器**只在 session_start 启动**、session_shutdown 清理（factory 可能在无会话的调用中运行）
  * - 任何输出路径都不得包含 cookie 原文
  * - 额度数据不写入 session、不发送给模型
@@ -301,7 +301,10 @@ export default function (pi: ExtensionAPI): void {
         const config = safeConfig(ctx);
         if (!config) return;
         if (config.ark.accounts.length === 0) {
-          show(ctx, "已配置账号：无", ["用 /quota set ark-a 添加第一个 Ark 账号"]);
+          show(ctx, "已配置账号：无", [
+            "先在 ~/.pi/agent/multi-quota.json 里创建账号槽位（含 provider 字段）",
+            "再用 /quota set ark-a 粘贴这个账号的控制台 cookie",
+          ]);
           return;
         }
         const lines = config.ark.accounts.map((account) => {

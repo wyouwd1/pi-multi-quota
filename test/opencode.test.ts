@@ -17,7 +17,7 @@ import {
 /** 占位凭据，不是真实 API key。 */
 const TEST_API_KEY = "test-key-not-a-real-credential";
 
-/** SPEC §2.1 实测响应样例，每次调用返回新对象，避免用例间互相污染。 */
+/** SPEC §2.1 响应结构（结构为实测所得，数值已合成），每次调用返回新对象，避免用例间互相污染。 */
 function specPayload(): unknown {
   return {
     usage: {
@@ -63,9 +63,9 @@ describe("parseOpenCodeUsage", () => {
     const report = parseOpenCodeUsage(specPayload(), fetchedAt);
 
     assert.deepEqual(report.windows, [
-      { level: "session", percent: 12, resetsAt: 1789450304 },
-      { level: "weekly", percent: 34, resetsAt: 1789948800 },
-      { level: "monthly", percent: 56, resetsAt: 1900200000 },
+      { level: "session", percent: 12, resetsAt: 1800004325 },
+      { level: "weekly", percent: 34, resetsAt: 1800489600 },
+      { level: "monthly", percent: 56, resetsAt: 1800272730 },
     ]);
     assert.equal(report.fetchedAt, fetchedAt);
     assert.equal(report.notes, undefined);
@@ -88,7 +88,7 @@ describe("parseOpenCodeUsage", () => {
 
     const report = parseOpenCodeUsage(payload, 1);
 
-    assert.deepEqual(report.windows?.[0], { level: "session", percent: 100, resetsAt: 1789450304 });
+    assert.deepEqual(report.windows?.[0], { level: "session", percent: 100, resetsAt: 1800004325 });
     assert.equal(report.notes, undefined);
   });
 
@@ -222,7 +222,7 @@ describe("fetchOpenCodeUsage", () => {
     assert.equal(seenInit?.redirect, "error");
     assert.deepEqual(
       report.windows?.map((w) => w.percent),
-      [9, 8, 88],
+      [12, 34, 56],
     );
     assert.equal(report.error, undefined);
   });

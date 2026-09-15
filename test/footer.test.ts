@@ -17,7 +17,7 @@ const FIXED_NOW_SEC = FIXED_NOW_MS / 1000;
 const HOUR = 3600;
 const DAY = 86_400;
 
-/** Ark-A：SPEC §2.3 实测样例的百分比，含重置时间。 */
+/** Ark-A：SPEC §2.3 同源响应结构的百分比（结构为实测所得，数值已合成），含重置时间。 */
 function arkA(): AccountReport {
   return {
     accountId: "ark-a",
@@ -41,15 +41,15 @@ function arkB(): AccountReport {
     sourceId: "ark",
     kind: "windows",
     windows: [
-      { level: "session", percent: 2, resetsAt: FIXED_NOW_SEC + 5 * HOUR + 30 * 60 },
-      { level: "weekly", percent: 3 },
-      { level: "monthly", percent: 15 },
+      { level: "session", percent: 21, resetsAt: FIXED_NOW_SEC + 5 * HOUR + 30 * 60 },
+      { level: "weekly", percent: 42 },
+      { level: "monthly", percent: 63 },
     ],
     fetchedAt: FIXED_NOW_MS,
   };
 }
 
-/** DeepSeek：SPEC §2.2 实测样例。 */
+/** DeepSeek：SPEC §2.2 同源响应结构（数值已合成）。 */
 function deepSeek(): AccountReport {
   return {
     accountId: "deepseek",
@@ -86,7 +86,7 @@ test("renderFooter：单账号 windows 段形状（session→5h / weekly→wk / 
 test("renderFooter：多账号以 \" · \" 分隔", () => {
   const out = renderFooter([arkA(), arkB()]);
   assert.equal(out, "Ark-A 5h 13% wk 37% mo 100% · Ark-B 5h 21% wk 42% mo 63%");
-  // 默认预算 60，此串 52 字符，不触发裁剪
+  // 默认预算 60，此串 56 字符，不触发裁剪
   assert.ok(out.length < 60);
 });
 
@@ -160,7 +160,7 @@ test("renderFooter：未登记的 error code 原样展示，绝不回显 message
   assert.equal(out.includes("MARKER"), false);
 });
 
-test("renderFooter：maxWidth 裁剪优先保住全部账号（D-09），实在不够才砍账号", () => {
+test("renderFooter：maxWidth 裁剪优先保住全部账号（SPEC §4.1 裁剪顺序 2），实在不够才砍账号", () => {
   // 30 预算：compact 全量（28 字符）装得下 → 两个账号都保住
   assert.equal(
     renderFooter([arkA(), arkB()], { maxWidth: 30, currentAccountId: "ark-a" }),
@@ -170,32 +170,32 @@ test("renderFooter：maxWidth 裁剪优先保住全部账号（D-09），实在�
     renderFooter([arkA(), arkB()], { maxWidth: 30, currentAccountId: "ark-b" }),
     "Ark-A mo 100% · Ark-B mo 63%",
   );
-  // 26 预算：compact 全量（28）装不下 → 退到只留当前账号的完整形态
+  // 27 预算：compact 全量（28）装不下 → 退到只留当前账号的完整形态
   assert.equal(
-    renderFooter([arkA(), arkB()], { maxWidth: 26, currentAccountId: "ark-a" }),
+    renderFooter([arkA(), arkB()], { maxWidth: 27, currentAccountId: "ark-a" }),
     "Ark-A 5h 13% wk 37% mo 100%",
   );
   assert.equal(
-    renderFooter([arkA(), arkB()], { maxWidth: 26, currentAccountId: "ark-b" }),
+    renderFooter([arkA(), arkB()], { maxWidth: 27, currentAccountId: "ark-b" }),
     "Ark-B 5h 21% wk 42% mo 63%",
   );
 });
 
-test("renderFooter：当前账号段仍超宽则退化为最简形态（级别 c）", () => {
-  // 25 字符的完整段在 26 预算下保留，在 24 预算下退化为 "Ark-A mo 100%"
+test("renderFooter：当前账号段仍超宽则退化为最简形态（级别 d）", () => {
+  // 27 字符的完整段在 27 预算下保留，在 26 预算下退化为 "Ark-A mo 100%"
   assert.equal(
-    renderFooter([arkA(), arkB()], { maxWidth: 26, currentAccountId: "ark-a" }),
+    renderFooter([arkA(), arkB()], { maxWidth: 27, currentAccountId: "ark-a" }),
     "Ark-A 5h 13% wk 37% mo 100%",
   );
   assert.equal(
-    renderFooter([arkA(), arkB()], { maxWidth: 24, currentAccountId: "ark-a" }),
+    renderFooter([arkA(), arkB()], { maxWidth: 26, currentAccountId: "ark-a" }),
     "Ark-A mo 100%",
   );
   // balance 段本身即最简形态，超宽时直接进入截断
   assert.equal(renderFooter([deepSeek()], { maxWidth: 5, currentAccountId: "deepseek" }), "Deep…");
 });
 
-test("renderFooter：仍超宽则截断并加 \"…\"（级别 d）", () => {
+test("renderFooter：仍超宽则截断并加 \"…\"（级别 e）", () => {
   assert.equal(renderFooter([arkA(), arkB()], { maxWidth: 8, currentAccountId: "ark-a" }), "Ark-A m…");
   // 无 currentAccountId / 不匹配任何账号 → 先逐段 compact（保留最有价值的 monthly），
   // 仍超宽才截断。

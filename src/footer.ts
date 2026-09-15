@@ -1,6 +1,6 @@
 /**
  * footer 单行渲染 / 详情渲染 + 宽度预算裁剪（纯函数，无 IO）。
- * 契约见 tasks/TEAM-SYNC.md §1.2；错误短原因映射见 §1.3。
+ * 契约见 SPEC.md §3.2（数据模型）；错误短原因映射见本文件下方的 ERROR_TEXTS。
  * 未登记的 error code 只展示 code 本身，绝不回显 QuotaError.message。
  */
 
@@ -28,7 +28,7 @@ const WINDOW_LABELS: Record<WindowLevel, string> = {
 /** 窗口渲染顺序固定为 5h / wk / mo，与 SPEC §4.1 的示例一致。 */
 const WINDOW_ORDER: readonly WindowLevel[] = ["session", "weekly", "monthly"];
 
-/** §1.3 错误码 → 可展示短句。 */
+/** 错误码 → 可展示短句（footer 侧的唯一映射表）。 */
 const ERROR_TEXTS: Record<string, string> = {
   "missing-credential": "未配置",
   NotLogin: "cookie 过期",
@@ -42,12 +42,12 @@ const MINUTE_MS = 60_000;
 const HOUR_MS = 3_600_000;
 const DAY_MS = 86_400_000;
 
-/** footer 的百分比取整（SPEC 示例：6.57 → 7，100 → 100）。 */
+/** footer 的百分比取整（SPEC 示例：12.5 → 13，100 → 100）。 */
 function formatPercent(percent: number): string {
   return `${Math.round(percent)}%`;
 }
 
-/** §1.3 映射：已知 code 用展示文本，`http-<status>` 用 `HTTP <status>`，其余原样返回 code。 */
+/** ERROR_TEXTS 映射：已知 code 用展示文本，`http-<status>` 用 `HTTP <status>`，其余原样返回 code。 */
 function errorReason(code: string): string {
   if (code.startsWith("http-")) {
     const status = code.slice("http-".length);
@@ -129,12 +129,12 @@ export function renderFooter(reports: AccountReport[], opts: FooterOptions = {})
   const full = reports.map(renderSegment).join(SEGMENT_SEPARATOR);
   if (visibleWidth(full) <= maxWidth) return full;
 
-  // 裁剪顺序（SPEC §4.1 + D-09 修订）：
+  // 裁剪顺序（SPEC §4.1）：
   //   (a) 砍重置倒计时 —— footer 段落不含该字段，天然满足；
   //   (b) 全量 compact —— 优先保住**全部账号**（即使每段只剩一个数字）；
   //   (c) 退到只留当前账号（完整形态）；
   //   (d) 当前账号 compact；(e) 仍超宽 → 截断。
-  // (b) 优先于 (c) 是 D-09 的修订：知道「两个账号各自还剩多少」
+  // (b) 优先于 (c) 的理由：知道「两个账号各自还剩多少」
   // 比「一个账号的三个窗口」对切换决策更有价值（且原逻辑从不尝试 b，会白白丢掉账号）。
   const currentAccountId = opts.currentAccountId;
   const currentReports =

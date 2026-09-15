@@ -1,7 +1,7 @@
 /**
  * OpenCode Go（Zen）额度适配器。
  *
- * 端点与响应结构见 SPEC §2.1，错误码取值见 tasks/TEAM-SYNC.md §1.3。
+ * 端点与响应结构见 SPEC §2.1，错误码语义与展示约束见 SPEC §5 / §6。
  * 零运行时依赖；网络调用通过 `fetchImpl` 注入，测试不触网。
  */
 import { redact } from "../config.js";

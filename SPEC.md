@@ -1,14 +1,15 @@
 # SPEC: pi-multi-quota
 
-> 状态：待 review
+> 状态：已实现；通过 GitHub 公开仓库分发（**不发布 npm**）
 > 产出日期：2026-09-15
-> 前置：本 spec 由访谈（8 轮问答）收敛而来，所有决策均已由本人逐条确认。
+> 本文档为设计存档，现状以 README 为准。
+> 前置：本 spec 由访谈（8 轮问答）收敛而来，所有决策均已逐条确认。
 
 ---
 
 ## 1. Objective
 
-一个**本地自用**的 pi package，用**纯 HTTP、零子进程**在 footer 实时显示「当前模型所属供应商」的额度，并提供 `/quota` 命令做主动查询与全量对比。
+一个自用为主的 pi package，用**纯 HTTP、零子进程**在 footer 实时显示「当前模型所属供应商」的额度，并提供 `/quota` 命令做主动查询与全量对比。
 
 ### 为什么做
 
@@ -26,19 +27,19 @@
 
 1. 使用任一 Ark provider 时，footer 并排显示 **Ark-A / Ark-B 两个账号**的 5h / 周 / 月百分比
 2. 切到 OpenCode 或 DeepSeek，footer **整段自动替换**为对应供应商
-3. `/quota` 展开当前供应商明细；`/quota all` 一次查全部（4 个请求并发）
+3. `/quota` 展开当前供应商明细；`/quota all` 一次查全部（Ark 双账号 + Zen + DeepSeek；仅当前 provider 对应数据源能取到凭据）
 4. cookie 将过期有提醒；过期后明确指示 `/quota set ark-a`
 5. 全程不依赖任何 CLI、不需要 SSO
 
-### 最终用户
+### 分发形态
 
-仅本人。不发布 npm。
+自用为主。通过 GitHub 公开仓库分发（`pi install https://github.com/wyouwd1/pi-multi-quota`），**不发布 npm**。
 
 ---
 
 ## 2. 已实测的技术事实（不可推翻的设计前提）
 
-以下全部在 2026-09-15 实测确认，非推测。
+以下全部在 2026-09-15 实测确认，非推测。各节响应样例的**结构**为实测所得，其中的**数值已人工合成**，不代表任何真实账号的用量或余额。
 
 ### 2.1 OpenCode Go
 
@@ -87,7 +88,7 @@
 
 - **关键简化**：`x-csrf-token` 的值与 cookie 中 `csrfToken=` 完全相同 ⇒ 程序自行解析，**用户只需维护一个 cookie 字符串**
 - 请求体：`{}`，`Content-Type: application/json`
-- 实测成功响应：
+- 成功响应结构（实测所得，数值已合成）：
 
 ```json
 {"ResponseMetadata":{...},"Result":{
@@ -191,7 +192,7 @@ Zen 5h 12% wk 34% mo 56%
 DeepSeek ¥1234.56
 ```
 
-**宽度预算**：默认上限 60 可见字符，超出按序裁剪（顺序经 D-09 修订）：
+**宽度预算**：默认上限 60 可见字符，超出按序裁剪（裁剪顺序经评审修订）：
 1. 先砍重置倒计时（footer 段落本就不含倒计时，天然满足）
 2. **全量 compact** —— 优先保住**全部账号**（每段只留一个窗口）
 3. 退到只留当前账号（完整形态）
@@ -209,18 +210,18 @@ DeepSeek ¥1234.56
 | 命令 | 行为 |
 |---|---|
 | `/quota` | 展开当前供应商明细：每账号的窗口百分比 + 重置倒计时；balance 类显示余额明细与状态 |
-| `/quota all` | 并发查询全部（Ark 两账号 + Zen + DeepSeek，共 4 请求），并排展示 |
-| `/quota set <account>` | 打开多行编辑器粘贴 cookie → **当场发真实请求校验** → 通过则保存，失败则回显原因 |
+| `/quota all` | 一次查询全部（Ark 两账号 + Zen + DeepSeek），并排展示；仅当前 provider 对应的数据源能取到凭据，其余显示 `✗ 未配置` |
+| `/quota set <account>` | 用单行输入框粘贴 cookie（实现采用单行 `ctx.ui.input`，不是多行 `ctx.ui.editor`）→ **当场发真实请求校验** → 通过则保存，失败则回显原因 |
 | `/quota list` | 列出已配置账号及其 cookie 剩余有效期 |
 
-`getArgumentCompletions` 提供 `all` / `set` / `list` 与账号名补全。
+`getArgumentCompletions` 提供 `all` / `set` / `list` / `close` 四个补全项。
 
 ### 4.3 cookie 录入流程（`/quota set ark-a`）
 
-1. `ctx.ui.editor("粘贴 Ark-A 的 cookie：", "")` 多行输入
+1. `ctx.ui.input("粘贴 Ark-A 的控制台 cookie：", "整段 cookie，不是单个值")` —— 实现采用**单行**输入（不是多行 `ctx.ui.editor`）
 2. 解析 cookie：能否提取 `csrfToken`？`digest` 的 `exp` 还剩多久？
 3. 立刻发一次真实请求：
-   - 成功 → 保存（chmod 600）→ `notify("ark-a 已更新：session 12.5% · weekly 37.3% · monthly 100.0%", "info")` → footer 立即刷新
+   - 成功 → 保存（chmod 600）→ `notify("ark-a 已更新：session 12.5% · weekly 37.3% · monthly 100.0%", "info")`（账号 id + 各窗口 toFixed(1) 百分比，与实现文案一致）→ footer 立即刷新
    - `NotLogin` → `notify("cookie 无效或已过期，请重新登录后复制", "error")`，**不保存**
    - `InvalidCSRFToken` → `notify("cookie 不完整，请复制完整 cookie", "error")`，**不保存**
 4. 保存前校验该 cookie 对应的 `AccountID` 是否与已存的另一账号重复 → 重复则警告（防呆：避免两个账号贴成同一个）
@@ -231,11 +232,11 @@ DeepSeek ¥1234.56
 
 | 场景 | 行为 |
 |---|---|
-| cookie 剩余 < 2h | footer 该段前置 ⚠️；`session_start` 时 toast 一次 |
+| cookie 剩余 < 2h | footer 不加标记；`session_start` 时 toast 提示一次 |
 | cookie 已过期 | footer 显示 `Ark-A ✗ cookie 过期`，**不影响** Ark-B 段 |
 | 网络错误 | 保留上次成功数据 + 标 `stale`（footer 加 `~` 前缀），不清空 |
 | 接口返回未知结构 | 该段显示 `✗ 接口变更`，其余段落不受影响 |
-| 未配置 cookie 的 Ark 账号 | 显示 `Ark-B 未配置`（不报错、不刷屏） |
+| 未配置 cookie 的 Ark 账号 | 显示 `Ark-B ✗ 未配置`（不报错、不刷屏） |
 | 并发查询 | 全部 provider 并发发出，单个失败不影响其他 |
 | 非 TUI 模式（`-p`） | 不发布 footer；不发 toast；缓存逻辑照常 |
 | 定时刷新失败 | 指数退避（5min → 30min 上限），不每 tick 重试 |
@@ -272,22 +273,26 @@ DeepSeek ¥1234.56
 ## 8. Commands
 
 ```bash
-# 安装（本地路径，写入全局 settings.json）
-pi install /home/user/workspace/pi-multi-quota
+# 安装（从 GitHub，写入全局 settings.json）
+pi install https://github.com/wyouwd1/pi-multi-quota
+
+# 安装（本地克隆目录，在仓库根目录执行）
+pi install .
 
 # 开发期试跑（不写入 settings）
-pi -e /home/user/workspace/pi-multi-quota/src/index.ts
+pi -e ./src/index.ts
 
-# 测试
-cd /home/user/workspace/pi-multi-quota && npm test
+# 测试（在仓库根目录执行）
+cd pi-multi-quota && npm test
 # → node --import tsx --test test/*.test.ts
 
 # 类型检查
 npm run typecheck
 # → tsc --noEmit
 
-# 卸载
-pi remove /home/user/workspace/pi-multi-quota
+# 卸载（用与安装时相同的 source 标识）
+pi remove https://github.com/wyouwd1/pi-multi-quota
+pi remove .
 ```
 
 ---
@@ -295,11 +300,14 @@ pi remove /home/user/workspace/pi-multi-quota
 ## 9. Project Structure
 
 ```
-/home/user/workspace/pi-multi-quota/
+pi-multi-quota/
+├── .gitignore
+├── LICENSE                # MIT
+├── README.md              # 用法、cookie 获取步骤
+├── SPEC.md                # 本文件（设计存档）
 ├── package.json
+├── package-lock.json
 ├── tsconfig.json
-├── README.md              # 用法、cookie 获取步骤（含截图说明位）
-├── SPEC.md                # 本文件
 ├── src/
 │   ├── index.ts           # 扩展入口
 │   ├── types.ts
@@ -313,11 +321,14 @@ pi remove /home/user/workspace/pi-multi-quota
 │       ├── opencode.ts
 │       └── deepseek.ts
 └── test/
-    ├── cookie.test.ts
     ├── ark.test.ts
-    ├── opencode.test.ts
+    ├── cache.test.ts
+    ├── config.test.ts
+    ├── cookie.test.ts
     ├── deepseek.test.ts
-    └── footer.test.ts
+    ├── footer.test.ts
+    ├── opencode.test.ts
+    └── registry.test.ts
 ```
 
 ---
@@ -380,7 +391,7 @@ pi remove /home/user/workspace/pi-multi-quota
 
 - [ ] **SC1** 当前模型为 `volcengine` 时，footer 同时出现 `Ark-A` 与 `Ark-B` 两段，且各自含 5h / wk / mo 三个百分比
 - [ ] **SC2** `/model` 切到 `opencode-go-ds` 后，footer 在 1 秒内变为 OpenCode 段，Ark 段消失
-- [ ] **SC3** `/quota all` 一次输出 4 条账号数据（Ark-A / Ark-B / Zen / DeepSeek）
+- [ ] **SC3** `/quota all` 一次输出三段（Ark-A / Ark-B / Zen / DeepSeek，共 4 条账号数据；仅当前 provider 对应数据源有凭据，其余显示 `✗ 未配置`）
 - [ ] **SC4** 拿一个**人为篡改的 cookie** 执行 `/quota set ark-a`，回显 `NotLogin` 且**不写入**配置
 - [ ] **SC5** 用真实 cookie 执行 `/quota set ark-a`，成功保存，且文件权限为 `600`
 - [ ] **SC6** 全文检索 session 文件与扩展输出，**搜不到** cookie 原文（`digest` 值）与任何 API key
@@ -394,8 +405,8 @@ pi remove /home/user/workspace/pi-multi-quota
 
 | # | 问题 | 处理方式 |
 |---|---|---|
-| 1 | Ark-B 账号的真实 cookie 尚未取得（访谈中只验证了 Ark-A 的账号 `1000000001`） | 实现完成后由本人登录第二个账号补齐；未配置时按「未配置」降级 |
-| 2 | 定时器在 pi 长会话中的内存/句柄清理细节（`ctx.shutdown` 钩子） | 实现阶段按 `extensions.md` 的 long-lived resources 章节处理 |
+| 1 | Ark-B 账号的真实 cookie 尚未取得（访谈中只验证了 Ark-A 的账号；账号 ID 属个人配置，不写入文档） | 实现完成后由本人登录第二个账号补齐；未配置时按「未配置」降级 |
+| 2 | 定时器在 pi 长会话中的内存/句柄清理细节 | 实现时按 `node_modules/@earendil-works/pi-coding-agent/docs/extensions.md` 的 "Long-lived resources and shutdown" 章节处理：定时器在 `session_start` 启动、`session_shutdown` 清理 |
 | 3 | footer 60 字符预算在窄终端（80 列）下的实际观感 | 实现后实测调整；已预留 `maxWidth` 可配置 |
 | 4 | `digest` 是否存在 HTTP 层自动续期接口 | **明确排除出 MVP**；若日后觉得每日贴 cookie 过烦，另开一轮调研 |
 

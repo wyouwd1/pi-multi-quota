@@ -1,7 +1,7 @@
 /**
  * Ark 适配器测试。
  *
- * 覆盖：SPEC §2.3 实测样例的三个窗口、HTTP 200 但 body 带 Error 的失败分支
+ * 覆盖：SPEC §2.3 响应结构的三个窗口（响应结构为实测所得，数值已合成）、HTTP 200 但 body 带 Error 的失败分支
  * （NotLogin / InvalidCSRFToken / 未知码）、结构不识别的降级、未知 Level 的容忍、
  * 请求构造（csrf 来自 cookie、body 为 {}、拒绝重定向）、host 白名单与错误信息脱敏。
  * 全程使用假 payload 与假 fetchImpl，不触网。
@@ -22,7 +22,7 @@ import type { AccountReport, QuotaWindow, WindowLevel } from "../src/types.js";
 
 const FETCHED_AT = 1_760_000_000_000;
 
-/** SPEC §2.3 实测成功响应样例（字段原样保留，用于验证不丢精度、不换算）。 */
+/** SPEC §2.3 成功响应结构（结构为实测所得，数值已合成；字段原样保留，用于验证不丢精度、不换算）。 */
 const SPEC_SAMPLE = {
   ResponseMetadata: {
     RequestId: "0218999900001234abcdef",
@@ -44,6 +44,7 @@ const SPEC_SAMPLE = {
 };
 
 const CSRF_TOKEN = "csrf-token-for-test-0123456789";
+/** 合成占位账号 ID（非真实火山账号），仅用于拼装假 cookie 并验证凭据不泄漏。 */
 const ACCOUNT_ID_IN_COOKIE = "1000000001";
 /** 只需三段 JWT 形态 + 可解析的 exp，parseArkCookie 不验签。 */
 const DIGEST = `eyJhbGciOiJIUzI1NiJ9.${Buffer.from(

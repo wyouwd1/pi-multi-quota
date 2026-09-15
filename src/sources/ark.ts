@@ -1,7 +1,7 @@
 /**
  * Ark（火山引擎 Coding Plan）额度适配器。
  *
- * 端点与响应样例见 SPEC.md §2.3，错误码取值见 tasks/TEAM-SYNC.md §1.3。
+ * 端点、响应结构（实测所得，数值已合成）与失败码见 SPEC.md §2.3。
  * Ark 特例：**鉴权失败时 HTTP 仍是 200**，失败信息在 body 的 `ResponseMetadata.Error.Code` 里，
  * 只看状态码会把失败误判成成功。
  * 零运行时依赖；网络调用经 `fetchImpl` 注入；不写日志，error.message 只含中文短句、不回显凭据与响应体。
@@ -76,7 +76,7 @@ export function isArkAllowedUrl(url: string): boolean {
 
 /**
  * `account.id` → 展示名："ark-a" → "Ark-A"。
- * 契约（TEAM-SYNC §1.2）给的 `ArkAccountConfig` 只有 id/provider/cookie，没有 displayName，
+ * 契约类型 `ArkAccountConfig`（见 ../config.ts）只有 id/provider/cookie，没有 displayName，
  * 故由 id 派生；若需其他写法，调用方可在展示层覆盖 report.displayName。
  */
 function displayNameFor(accountId: string): string {
@@ -112,7 +112,7 @@ export function parseArkUsage(
     const known = KNOWN_ERROR_MESSAGES.get(code);
     if (known !== undefined) return fail(code, known);
     // 未知 code 归入 unknown-shape，而不是把原始 code 塞进 QuotaError.code ——
-    // 否则 footer 会展示出 §1.3 码表之外的英文错误码（review P1-1）。
+    // 否则 footer 会展示出 ERROR_TEXTS 表之外的英文错误码。
     // 原始 code 经脱敏后记入 notes，保留排查线索。
     const report = fail("unknown-shape", "接口变更");
     return { ...report, notes: [`Ark 返回未知错误码 ${redact(code)}`] };

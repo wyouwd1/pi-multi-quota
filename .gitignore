@@ -4,3 +4,22 @@ node_modules/
 
 # pi 运行痕迹（bg_run 输出、任务状态）
 .pi/
+
+# 内部协作产物（不进公开仓库）
+tasks/
+workflows/
+
+# 凭据与敏感文件
+.env
+.env.*
+*.pem
+
+# 覆盖率产物
+coverage/
+
+# 本地工具与 IDE 配置
+.npmrc
+*.key
+*.tsbuildinfo
+.idea/
+.vscode/

@@ -1,6 +1,6 @@
 /**
  * DeepSeek 适配器测试。
- * 覆盖：SPEC §2.2 真实样例、金额字符串精度、多币种、不可用 / 空数组分支、注入 fetch 的失败分支与脱敏。
+ * 覆盖：SPEC §2.2 同源响应结构（结构为实测所得，数值已合成）、金额字符串精度、多币种、不可用 / 空数组分支、注入 fetch 的失败分支与脱敏。
  */
 
 import assert from "node:assert/strict";
@@ -17,7 +17,7 @@ import type { AccountReport, BalanceEntry } from "../src/types.js";
 const FETCHED_AT = 1_760_000_000_000;
 const API_KEY = "sk-deepseek-test-0123456789abcdef";
 
-/** SPEC §2.2 实测响应样例。 */
+/** SPEC §2.2 响应结构（结构为实测所得，数值已合成）。 */
 const SPEC_SAMPLE = {
   is_available: true,
   balance_infos: [
@@ -85,9 +85,10 @@ test("parseDeepSeekBalance: CNY 余额保持字符串 \"1234.56\"，未转成 Nu
   assert.equal(typeof cny.total, "string", "金额必须是字符串");
   assert.equal(cny.granted, "0.00");
   assert.equal(cny.toppedUp, "1234.56");
-  // 转 Number 会丢掉小数末尾的 0（"1234.56" → 296.6 → "296.6"）
-  assert.ok(cny.total.endsWith("0"), "小数末位 0 必须保留");
-  assert.ok(String(Number(cny.total)) !== cny.total, "字符串不应等于 Number 往返结果");
+  // 合成值 1234.56 不具备尾零特性，因此改用同一响应体里 §8 明确「不动」的 granted "0.00"
+  // 来验证「未经 Number 转换」这一命题（合成前的样例值靠小数末位 0 证明同一件事）。
+  assert.ok(cny.granted.endsWith("0"), "小数末位 0 必须保留");
+  assert.ok(String(Number(cny.granted)) !== cny.granted, "字符串不应等于 Number 往返结果");
 });
 
 test("parseDeepSeekBalance: 大额金额不做 float 往返", () => {

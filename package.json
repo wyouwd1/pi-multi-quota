@@ -1,10 +1,16 @@
 {
   "name": "pi-multi-quota",
   "version": "0.1.0",
-  "private": true,
   "type": "module",
   "description": "Pi extension: 纯 HTTP 查询 Ark 双账号 / OpenCode Go / DeepSeek 额度，footer 跟随当前模型展示",
   "license": "MIT",
+  "author": "wyouwd1",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/wyouwd1/pi-multi-quota.git"
+  },
+  "homepage": "https://github.com/wyouwd1/pi-multi-quota#readme",
+  "bugs": { "url": "https://github.com/wyouwd1/pi-multi-quota/issues" },
   "keywords": ["pi-package", "pi-extension", "quota", "usage"],
   "pi": { "extensions": ["./src/index.ts"] },
   "scripts": {

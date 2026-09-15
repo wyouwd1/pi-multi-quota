@@ -8,7 +8,7 @@ import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import { parseArkCookie, describeExpiry, type CookieParseResult } from "../src/cookie.js";
 
-/** 假的 exp：与 SPEC §2.3 的实测样例同一个数量级（epoch 秒）。 */
+/** 假的 exp：明显为合成的整数 epoch 秒（灰区 G2 裁决）。 */
 const EXP_SECONDS = 2_000_000_000;
 const EXP_MS = EXP_SECONDS * 1000;
 /** 距 exp 恰好还剩 3 小时 12 分。 */

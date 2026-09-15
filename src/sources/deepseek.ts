@@ -1,9 +1,9 @@
 /**
  * DeepSeek 余额适配器。
  *
- * 契约见 tasks/TEAM-SYNC.md §1.2，实测响应样例见 SPEC.md §2.2。
+ * 数据模型见 SPEC.md §3.2；响应结构为实测所得，数值已合成（SPEC.md §2.2）。
  * 硬约束：金额（total / granted / toppedUp）全程保持接口返回的**字符串**，
- * 不得转 Number —— 转 float 会丢精度（SPEC §2.2 / TEAM-SYNC §4.7）。
+ * 不得转 Number —— 转 float 会丢精度（SPEC §2.2 / §3.2）。
  */
 
 import type { FetchOptions } from "./opencode.js";
