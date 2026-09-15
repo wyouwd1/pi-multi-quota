@@ -1,0 +1,22 @@
+{
+  "name": "pi-multi-quota",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Pi extension: 纯 HTTP 查询 Ark 双账号 / OpenCode Go / DeepSeek 额度，footer 跟随当前模型展示",
+  "license": "MIT",
+  "keywords": ["pi-package", "pi-extension", "quota", "usage"],
+  "pi": { "extensions": ["./src/index.ts"] },
+  "scripts": {
+    "test": "node --import tsx --test test/*.test.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "peerDependencies": { "@earendil-works/pi-coding-agent": "*" },
+  "devDependencies": {
+    "@earendil-works/pi-coding-agent": "*",
+    "@types/node": "^26.0.0",
+    "tsx": "^4.19.0",
+    "typescript": "^7.0.0"
+  },
+  "engines": { "node": ">=20" }
+}
