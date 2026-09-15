@@ -109,8 +109,13 @@ export function parseArkUsage(
   if (error !== undefined) {
     const code = error["Code"];
     if (typeof code !== "string" || code === "") return changed();
-    // 未知 code 原样透传；message 只给短句，不回显 Error.Message 原文
-    return fail(code, KNOWN_ERROR_MESSAGES.get(code) ?? `Ark 接口返回错误：${redact(code)}`);
+    const known = KNOWN_ERROR_MESSAGES.get(code);
+    if (known !== undefined) return fail(code, known);
+    // 未知 code 归入 unknown-shape，而不是把原始 code 塞进 QuotaError.code ——
+    // 否则 footer 会展示出 §1.3 码表之外的英文错误码（review P1-1）。
+    // 原始 code 经脱敏后记入 notes，保留排查线索。
+    const report = fail("unknown-shape", "接口变更");
+    return { ...report, notes: [`Ark 返回未知错误码 ${redact(code)}`] };
   }
 
   const result = asRecord(root["Result"]);
@@ -236,6 +241,11 @@ export async function fetchArkUsage(
     try {
       payload = await response.json();
     } catch {
+      // 超时可能落在 body 读取阶段（fetch 已 resolve、body 未读完），
+      // 此时应报 timeout，而非误报「接口变更」
+      if (timedOut || controller.signal.aborted) {
+        return fail("timeout", `Ark 响应读取超时（${timeoutMs}ms）`);
+      }
       return fail("unknown-shape", "响应不是合法 JSON");
     }
 

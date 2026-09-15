@@ -124,7 +124,7 @@ export async function fetchDeepSeekBalance(
 ): Promise<AccountReport> {
   const fetchedAt = Date.now();
 
-  if (apiKey.trim() === "") {
+  if (typeof apiKey !== "string" || apiKey.trim() === "") {
     return failure(fetchedAt, "missing-credential", "未配置 DeepSeek API key");
   }
 
@@ -175,6 +175,9 @@ export async function fetchDeepSeekBalance(
     try {
       payload = await response.json();
     } catch {
+      if (timedOut || controller.signal.aborted) {
+        return failure(fetchedAt, "timeout", `DeepSeek 响应读取超时（${timeoutMs}ms）`);
+      }
       return failure(fetchedAt, "unknown-shape", "DeepSeek 响应不是合法 JSON");
     }
 

@@ -70,7 +70,7 @@ function windowOf(report: AccountReport, level: WindowLevel): QuotaWindow {
 function assertRedacted(report: AccountReport): void {
   const text = [report.error?.message ?? "", ...(report.notes ?? [])].join(" ");
   for (const secret of SECRETS) {
-    assert.ok(!text.includes(secret), `错误信息泄漏了凭据片段：${secret}`);
+    assert.ok(!text.includes(secret), "错误信息泄漏了凭据片段（内容已省略，避免断言失败时反向泄漏）");
   }
 }
 
@@ -210,7 +210,7 @@ test("parseArkUsage: ResponseMetadata.Error.Code=InvalidCSRFToken → code Inval
   assertRedacted(report);
 });
 
-test("parseArkUsage: 未知 Error.Code 原样传递，message 仍是短句", () => {
+test("parseArkUsage: 未知 Error.Code 归入 unknown-shape，原始 code 降级进 notes", () => {
   const report = parseArkUsage(
     {
       ResponseMetadata: {
@@ -224,8 +224,12 @@ test("parseArkUsage: 未知 Error.Code 原样传递，message 仍是短句", () 
 
   const error = report.error;
   assert.ok(error);
-  assert.equal(error.code, "Throttling", "未知 code 必须原样透传");
-  assert.match(error.message, /Throttling/);
+  assert.equal(error.code, "unknown-shape", "未知 code 不得进入 QuotaError.code（§1.3 码表之外）");
+  assert.equal(error.message, "接口变更");
+  assert.ok(
+    (report.notes ?? []).some((note) => note.includes("Throttling")),
+    "原始 code 应降级保留到 notes 供排查",
+  );
   assertRedacted(report);
 });
 

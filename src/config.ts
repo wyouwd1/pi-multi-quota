@@ -100,7 +100,8 @@ export function saveConfig(cfg: QuotaConfig): void {
   const tmp = path.join(dir, `.${path.basename(file)}.${process.pid}-${tmpCounter}.tmp`);
   const data = `${JSON.stringify(cfg, null, 2)}\n`;
   try {
-    fs.writeFileSync(tmp, data, { encoding: "utf8", mode: 0o600 });
+    // flag "wx"：同名临时文件已存在时直接失败，避免跟随符号链接写入他人文件
+    fs.writeFileSync(tmp, data, { encoding: "utf8", mode: 0o600, flag: "wx" });
     fs.chmodSync(tmp, 0o600); // umask 可能放宽 mode，显式收紧
     fs.renameSync(tmp, file);
     fs.chmodSync(file, 0o600);

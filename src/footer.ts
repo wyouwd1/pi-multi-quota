@@ -98,7 +98,11 @@ function segmentName(report: AccountReport): string {
  * 因此宽度裁剪的第一级（先砍倒计时）在 footer 里天然成立，无字段可砍。
  */
 function renderSegment(report: AccountReport): string {
-  if (report.error !== undefined) {
+  const hasData =
+    (report.windows?.length ?? 0) > 0 || (report.balances?.length ?? 0) > 0;
+  // stale 数据优先于错误展示：SPEC §5 要求网络失败时保留上次成功数据，
+  // 错误原因改由 renderDetail 呈现。否则 SC7（断网后仍显示上次数据）会退化成丢数据。
+  if (report.error !== undefined && !hasData) {
     return `${report.displayName} ✗ ${errorReason(report.error.code)}`;
   }
   const body = segmentBody(report);
@@ -125,15 +129,23 @@ export function renderFooter(reports: AccountReport[], opts: FooterOptions = {})
   const full = reports.map(renderSegment).join(SEGMENT_SEPARATOR);
   if (visibleWidth(full) <= maxWidth) return full;
 
-  // 裁剪顺序（SPEC §4.1，先砍低优先级）：(a) 砍重置倒计时 —— footer 段落不含该字段，天然满足；
-  // (b) 砍非当前账号；(c) 当前账号退化为最简形态；(d) 仍超宽 → 截断并加 "…"。
+  // 裁剪顺序（SPEC §4.1 + D-09 修订）：
+  //   (a) 砍重置倒计时 —— footer 段落不含该字段，天然满足；
+  //   (b) 全量 compact —— 优先保住**全部账号**（即使每段只剩一个数字）；
+  //   (c) 退到只留当前账号（完整形态）；
+  //   (d) 当前账号 compact；(e) 仍超宽 → 截断。
+  // (b) 优先于 (c) 是 D-09 的修订：知道「两个账号各自还剩多少」
+  // 比「一个账号的三个窗口」对切换决策更有价值（且原逻辑从不尝试 b，会白白丢掉账号）。
   const currentAccountId = opts.currentAccountId;
   const currentReports =
     currentAccountId === undefined
       ? []
       : reports.filter((report) => report.accountId === currentAccountId);
 
+  const compactAll = reports.map(renderCompactSegment).join(SEGMENT_SEPARATOR);
+
   if (currentReports.length > 0) {
+    if (visibleWidth(compactAll) <= maxWidth) return compactAll;
     const trimmed = currentReports.map(renderSegment).join(SEGMENT_SEPARATOR);
     if (visibleWidth(trimmed) <= maxWidth) return trimmed;
     const compact = currentReports.map(renderCompactSegment).join(SEGMENT_SEPARATOR);
@@ -141,7 +153,10 @@ export function renderFooter(reports: AccountReport[], opts: FooterOptions = {})
     return truncateToWidth(compact, maxWidth);
   }
 
-  return truncateToWidth(full, maxWidth);
+  // 无 currentAccountId 或未命中（OpenCode/DeepSeek 恒定如此，Ark 未绑定账号时也是）：
+  // 先逐段 compact 再截断，避免直接砍成「Ark-A 5h 13% wk 37…」这种半截形态。
+  if (visibleWidth(compactAll) <= maxWidth) return compactAll;
+  return truncateToWidth(compactAll, maxWidth);
 }
 
 /** 重置倒计时：<1 分钟 → "<1m"；<1 天 → "4h 12m"；否则 "2d 3h"。 */

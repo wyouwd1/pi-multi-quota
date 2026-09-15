@@ -4,6 +4,7 @@
  * 端点与响应结构见 SPEC §2.1，错误码取值见 tasks/TEAM-SYNC.md §1.3。
  * 零运行时依赖；网络调用通过 `fetchImpl` 注入，测试不触网。
  */
+import { redact } from "../config.js";
 import type { AccountReport, QuotaWindow, WindowLevel } from "../types.js";
 
 export const OPENCODE_USAGE_URL = "https://opencode.ai/zen/go/v1/usage";
@@ -85,7 +86,7 @@ export function parseOpenCodeUsage(payload: unknown, fetchedAt: number): Account
     }
     const status = raw.status;
     if (typeof status !== "string" || !USABLE_STATUSES.has(status)) {
-      notes.push(`窗口 ${field} 状态为 ${typeof status === "string" ? status : "缺失"}，已跳过`);
+      notes.push(`窗口 ${field} 状态为 ${typeof status === "string" ? redact(status) : "缺失"}，已跳过`);
       continue;
     }
     const percent = raw.percent;

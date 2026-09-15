@@ -1,3 +1,6 @@
 node_modules/
 *.log
 .DS_Store
+
+# pi 运行痕迹（bg_run 输出、任务状态）
+.pi/

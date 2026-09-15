@@ -160,13 +160,23 @@ test("renderFooter：未登记的 error code 原样展示，绝不回显 message
   assert.equal(out.includes("MARKER"), false);
 });
 
-test("renderFooter：maxWidth 裁剪先砍非当前账号（级别 b）", () => {
+test("renderFooter：maxWidth 裁剪优先保住全部账号（D-09），实在不够才砍账号", () => {
+  // 30 预算：compact 全量（28 字符）装得下 → 两个账号都保住
   assert.equal(
     renderFooter([arkA(), arkB()], { maxWidth: 30, currentAccountId: "ark-a" }),
-    "Ark-A 5h 13% wk 37% mo 100%",
+    "Ark-A mo 100% · Ark-B mo 63%",
   );
   assert.equal(
     renderFooter([arkA(), arkB()], { maxWidth: 30, currentAccountId: "ark-b" }),
+    "Ark-A mo 100% · Ark-B mo 63%",
+  );
+  // 26 预算：compact 全量（28）装不下 → 退到只留当前账号的完整形态
+  assert.equal(
+    renderFooter([arkA(), arkB()], { maxWidth: 26, currentAccountId: "ark-a" }),
+    "Ark-A 5h 13% wk 37% mo 100%",
+  );
+  assert.equal(
+    renderFooter([arkA(), arkB()], { maxWidth: 26, currentAccountId: "ark-b" }),
     "Ark-B 5h 21% wk 42% mo 63%",
   );
 });
@@ -187,11 +197,12 @@ test("renderFooter：当前账号段仍超宽则退化为最简形态（级别 c
 
 test("renderFooter：仍超宽则截断并加 \"…\"（级别 d）", () => {
   assert.equal(renderFooter([arkA(), arkB()], { maxWidth: 8, currentAccountId: "ark-a" }), "Ark-A m…");
-  // 无 currentAccountId / 不匹配任何账号 → 没有可砍的段落，直接截断全量文本
-  assert.equal(renderFooter([arkA(), arkB()], { maxWidth: 10 }), "Ark-A 5h …");
+  // 无 currentAccountId / 不匹配任何账号 → 先逐段 compact（保留最有价值的 monthly），
+  // 仍超宽才截断。
+  assert.equal(renderFooter([arkA(), arkB()], { maxWidth: 10 }), "Ark-A mo …");
   assert.equal(
     renderFooter([arkA(), arkB()], { maxWidth: 10, currentAccountId: "zen" }),
-    "Ark-A 5h …",
+    "Ark-A mo …",
   );
   // 极端预算：只剩截断标记
   assert.equal(renderFooter([arkA(), arkB()], { maxWidth: 1 }), "…");

@@ -20,6 +20,7 @@ import {
   findArkAccountById,
   findArkAccountByProvider,
   loadConfig,
+  redact,
   saveConfig,
   upsertArkAccount,
   type QuotaConfig,
@@ -60,7 +61,7 @@ export default function (pi: ExtensionAPI): void {
     try {
       return loadConfig();
     } catch (err) {
-      const message = err instanceof Error ? err.message : String(err);
+      const message = redact(err instanceof Error ? err.message : String(err));
       ctx.ui.notify(`多额度：配置文件读取失败 —— ${message}`, "error");
       return undefined;
     }
@@ -147,7 +148,8 @@ export default function (pi: ExtensionAPI): void {
           return report;
         } catch (err) {
           noteFailure(cache, target.accountId);
-          const message = err instanceof Error ? err.message : "查询失败";
+          // 外部 pi API 的异常文本不在本项目控制内，统一脱敏后再入报告
+          const message = redact(err instanceof Error ? err.message : "查询失败");
           const lastKnown = getLastKnown(cache, target.accountId);
           return {
             accountId: target.accountId,
@@ -255,7 +257,7 @@ export default function (pi: ExtensionAPI): void {
           return report;
         } catch (err) {
           noteFailure(cache, target.accountId);
-          const message = err instanceof Error ? err.message : "查询失败";
+          const message = redact(err instanceof Error ? err.message : "查询失败");
           return {
             accountId: target.accountId,
             displayName: target.displayName,
@@ -386,7 +388,7 @@ export default function (pi: ExtensionAPI): void {
         try {
           saveConfig(next);
         } catch (err) {
-          const message = err instanceof Error ? err.message : String(err);
+          const message = redact(err instanceof Error ? err.message : String(err));
           ctx.ui.notify(`保存失败：${message}`, "error");
           return;
         }
